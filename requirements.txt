@@ -3,3 +3,4 @@ flask
 base64
 numpy
 flask_socketio
+gunicorn
