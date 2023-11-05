@@ -1,0 +1,126 @@
+<!--<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-time Object Detection</title>
+</head>
+<body>
+    <h1>Real-time Object Detection</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <p id="message"></p>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Webcam Image Capture</title>
+    <style>
+        body {
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        
+        video {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        canvas {
+            display: none;
+        }
+        
+        #message {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 20px;
+        }
+        
+    </style>
+</head>
+<body>
+    <div>
+        <button id="start-camera">Start Camera</button>
+        <button id="stop-camera">Stop Camera</button>
+    </div>
+    <div>
+        <video id="video" width="320" height="240" autoplay></video>
+        <canvas id="canvas" width="320" height="240"></canvas>
+    </div>
+    <div>
+        <button id="capture-image">Capture Image</button>
+    </div>
+    <div>
+        <p id="message"></p>
+    </div>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        let isStreaming = false;
+
+        function startStreaming() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    video.play();
+                    isStreaming = true;
+                })
+                .catch((err) => {
+                    console.log('An error occurred: ' + err);
+                });
+        }
+
+        function stopStreaming() {
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach((track) => {
+                    track.stop();
+                });
+                video.srcObject = null;
+                isStreaming = false;
+            }
+        }
+
+        function captureImage() {
+            if (isStreaming) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const dataURL = canvas.toDataURL('image/jpeg');
+                fetch('/detect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image: dataURL })
+                })
+                .then((response) => response.json())
+                .then((data) => {
+                    const count = data.count;
+                    const message = `Number of people: ${count}`;
+                    document.getElementById('message').textContent = message;
+                });
+            }
+        }
+
+        document.getElementById('start-camera').addEventListener('click', startStreaming);
+        document.getElementById('stop-camera').addEventListener('click', stopStreaming);
+        document.getElementById('capture-image').addEventListener('click', captureImage);
+    </script>
+</body>
+</html>
